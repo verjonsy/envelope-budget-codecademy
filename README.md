@@ -10,7 +10,7 @@ Basic API features:
     
     PUT: modify envelope by ID
     
-    POST: subtract budget
+    POST: subtract budget, transfer budget
     
     DELETE: delete envelope by ID
 

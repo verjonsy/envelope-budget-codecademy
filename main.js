@@ -23,6 +23,20 @@ let envelopesObj = [
 
     }
 ]
+
+//building functions
+    //return obj with selected id
+    function selectObjById(id) {
+        let selectedObject = {};
+        for(let i = 0; i < envelopesObj.length; i++){
+            if (envelopesObj[i]["ID"] == id){
+                selectedObject = envelopesObj[i];
+                return selectedObject;
+            }
+        }
+
+    };
+
 //body parser
 var bodyParser = require('body-parser');
 app.use(bodyParser.json())
@@ -112,6 +126,7 @@ app.post('/envelopes/budget/:ID', (req, res, next) =>{
             selectedObject = envelopesObj[i];
         }
     }
+    //subtract money  
     try{
         if(JSON.stringify(selectedObject) != '{}'){
 
@@ -133,23 +148,53 @@ app.post('/envelopes/budget/:ID', (req, res, next) =>{
 })
 
 //delete envelopes (with high order filter function e.g for(filter))
-    app.delete('/envelopes/:ID', (req,res,next) => {
-        try{
-            //remove by filter, excluding selected object
-            let envelopeRemain = envelopesObj.filter((envelope) => {
-                return String(envelope.ID) != req.params.ID
-            })
-            // assign global array to filtered result
-            envelopesObj = envelopeRemain;
-            res.send(`Obj removed. Remain: ${JSON.stringify(envelopeRemain)}, requested delete ID ${req.params.ID}`)
-            
-            
-        }catch(e){
-            res.status(404).send(`something went wrong at deletion`)
+app.delete('/envelopes/:ID', (req,res,next) => {
+    try{
+        //remove by filter, excluding selected object
+        let envelopeRemain = envelopesObj.filter((envelope) => {
+            return String(envelope.ID) != req.params.ID
+        })
+        // assign global array to filtered result
+        envelopesObj = envelopeRemain;
+        res.send(`Obj removed. Remain: ${JSON.stringify(envelopeRemain)}, requested delete ID ${req.params.ID}`)
+        
+        
+    }catch(e){
+        res.status(404).send(`something went wrong at deletion`)
+    }
+})
+
+//transfer budget 
+app.post('/envelopes/transfer/:from/:to', (req, res, next) => {
+    let senderId = req.params.from;
+    let receiverId = req.params.to;     //      !!!needs validation for existing ID!!!
+    //query to set amount of money to send
+    let transferAmount = Number(req.query.amount);
+    //find sender and receiver objects
+    let senderObj = selectObjById(senderId);
+    let receiverObj = selectObjById(receiverId);
+
+    try{
+        if(senderObj["budget"] >= transferAmount){
+            senderObj["budget"] -= transferAmount;
+            receiverObj["budget"] += transferAmount;
         }
-        
-        
-    })
+        //attempt to do existing ID validation
+        else{
+            throw new Error('transfer failed.')
+        }
+
+    }catch(e){
+        res.send(`${e}`);
+    }
+    res.send(`${JSON.stringify(senderObj)}
+    sending ${transferAmount}
+    to
+    ${JSON.stringify(receiverObj)}
+    `)
+
+})
+    
 //server listen
 app.listen(port, () => {
     console.log(`app is listening on ${port}`)

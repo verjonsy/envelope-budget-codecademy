@@ -16,7 +16,9 @@ Basic API features:
 
 There are several backend components that I want to showcase here:
     Basic CRUD function
+
     Usage of Middleware
+    
     Error Handling
 
 

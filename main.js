@@ -39,12 +39,37 @@ let envelopesObj = [
 
 //body parser
 var bodyParser = require('body-parser');
+const e = require('express');
 app.use(bodyParser.json())
 
 //testing connection
 app.get('/', (req, res) => {
     res.send('App is working!')
 });
+
+//miiddleware
+app.use('/envelopes/:ID', (req, res, next) => {
+    let selectedID = req.params.ID;
+    let selectedObject = {};
+    //finding ID in array
+    for(let i = 0; i < envelopesObj.length; i++){
+        if (envelopesObj[i]["ID"] == selectedID){
+            selectedObject = envelopesObj[i];
+        }
+    }
+    try{
+        if(JSON.stringify(selectedObject) != '{}'){
+            // res.send(`Object selected: ${JSON.stringify(selectedObject)}`);
+            req.ID = selectedObject["ID"];
+            req.envelope = selectedObject;
+        }else{
+            throw new Error(e)
+        }
+    }catch(e){
+        res.status(404).send(`ID ${selectedID} not found`)
+    }
+    next()
+})
 
 //enpoints
 //get all envelopes
@@ -69,54 +94,25 @@ app.post('/envelopes', (req,res,next) => {
 
 //get specific envelop
 app.get('/envelopes/:ID', (req, res, next) =>{
-    let selectedID = req.params.ID;
-    let selectedObject = {};
-    //finding ID in array
-    for(let i = 0; i < envelopesObj.length; i++){
-        if (envelopesObj[i]["ID"] == selectedID){
-            selectedObject = envelopesObj[i];
-        }
-    }
-    try{
-        if(JSON.stringify(selectedObject) != '{}'){
-            res.send(`Object selected: ${JSON.stringify(selectedObject)}`);
-        }else{
-            throw new Error(e)
-        }
-    }catch(e){
-        res.status(404).send(`ID ${selectedID} not found`)
-    }
+    res.send(req.envelope);
 })
 
 //modify envelops
 app.put('/envelopes/:ID', (req, res, next) =>{
-    let selectedID = req.params.ID;
-    let selectedObject = {};
-    //finding ID in array
-    for(let i = 0; i < envelopesObj.length; i++){
-        if (envelopesObj[i]["ID"] == selectedID){
-            selectedObject = envelopesObj[i];
-        }
+    if(req.query.budget){
+        req.envelope["budget"] =  req.query.budget;
     }
-    try{
-        if(JSON.stringify(selectedObject) != '{}'){
-            if(req.query.budget){
-                selectedObject["budget"] =  req.query.budget;
-            }
-            if(req.query.title){
-                selectedObject["title"] =  req.query.title;
-            }
-            res.send(`Object updated: ${JSON.stringify(selectedObject)}`);
-        }else{
-            throw new Error(e)
-        }
-    }catch(e){
-        res.status(404).send(`ID ${selectedID} not found`)
-    }
+    else if(req.query.title){
+        req.envelope["title"] =  req.query.title;
+    }else{
+        throw Error("budget or title not inserted");
+       
+    }   
+    res.send(`Object updated: ${JSON.stringify(req.envelope)}`);
 })
 
 //subtract from envelope budget
-app.post('/envelopes/budget/:ID', (req, res, next) =>{
+app.post('/envelopes/:ID/budget', (req, res, next) =>{
     let selectedID = req.params.ID;
     let moneySpent = req.query.spend;
     let selectedObject = {};
